@@ -1,0 +1,61 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model friendships {
+    id                                 Int       @id @default(autoincrement())
+    user_id                            Int?
+    friend_id                          Int?
+    status                             String?   @default("pending") @db.VarChar(20)
+    created_at                         DateTime? @default(now()) @db.Timestamp(6)
+    users_friendships_friend_idTousers users?    @relation("friendships_friend_idTousers", fields: [friend_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+    users_friendships_user_idTousers   users?    @relation("friendships_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model list_members {
+    list_id Int
+    user_id Int
+    lists   lists @relation(fields: [list_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+    users   users @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+    @@id([list_id, user_id])
+}
+
+model lists {
+    id           Int            @id @default(autoincrement())
+    name         String         @db.VarChar(255)
+    owner_id     Int?
+    created_at   DateTime?      @default(now()) @db.Timestamp(6)
+    list_members list_members[]
+    users        users?         @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+    todos        todos[]
+}
+
+model todos {
+    id           Int       @id @default(autoincrement())
+    list_id      Int?
+    title        String    @db.VarChar(255)
+    is_completed Boolean?  @default(false)
+    created_by   Int?
+    created_at   DateTime? @default(now()) @db.Timestamp(6)
+    users        users?    @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+    lists        lists?    @relation(fields: [list_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model users {
+    id                                       Int            @id @default(autoincrement())
+    email                                    String         @unique @db.VarChar(255)
+    password_hash                            String         @db.VarChar(255)
+    unique_id                                String         @unique @db.Char(6)
+    created_at                               DateTime?      @default(now()) @db.Timestamp(6)
+    friendships_friendships_friend_idTousers friendships[]  @relation("friendships_friend_idTousers")
+    friendships_friendships_user_idTousers   friendships[]  @relation("friendships_user_idTousers")
+    list_members                             list_members[]
+    lists                                    lists[]
+    todos                                    todos[]
+}
